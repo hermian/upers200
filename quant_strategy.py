@@ -8,34 +8,34 @@ pd.set_option('mode.chained_assignment',  None) # <==== 경고를 끈다
 # %%
 ##########################################################
 # 필요하면 아래 3라인을 수정하세요
-FILENAME = '퀀트데이터2021.10.01'
-YEAR="21년"
-QUATER="2Q"
+FILENAME = '퀀트데이터2022.04.29(21년4Q재무데이터반영)'
+YEAR="21년" # 해당파일의 마지막재무데이터 반영년도 (엑셀의 FN열 헤더 참조)
+QUATER="4Q" # 해당파일의 마지막재무데이터 반영분기
 #########################################################
 header = ['발표POR',
- '순이익21년2QQOQ',
+ f'순이익{YEAR}{QUATER}QOQ',
  '1년등락률(%)',
  '발표OPM(%)',
  '발표분기PER',
  'F스코어지배주주순익>0여부',
- '순이익21년2QYOY',
+ f'순이익{YEAR}{QUATER}YOY',
  '과거GP/A(%)',
  '청산가치비율(NCAV전략)(%)',
  '5년평균OPM',
  '발표PBR',
- '매출액21년2QYOY',
+ f'매출액{YEAR}{QUATER}YOY',
  '업종(대)',
  '과거PFCR',
  'F스코어영업활동현금흐름>0여부',
  '회사명',
- '영업이익21년2QQOQ',
+ f'영업이익{YEAR}{QUATER}QOQ',
  '발표NPM증가율(최근분기)',
  '차입금비율(%)',
- '영업이익21년2QYOY',
+ f'영업이익{YEAR}{QUATER}YOY',
  '주가(원)',
  '발표자본증가율(최근분기)',
  '업종(소)',
- '매출액21년2QQOQ',
+ f'매출액{YEAR}{QUATER}QOQ',
  '1개월등락률(%)',
  '발표PER',
  '발표ROE증가율(최근분기)',
@@ -346,3 +346,32 @@ def 소형주_성장밸류(df1, n, ):  # 소형주 성장B + 슈퍼가치 시총
     return _소형주_성장밸류['회사명']
 
 소형주_성장밸류(df.copy(), 20)
+# %%
+if __name__ == '__main__':
+    import csv
+    import glob
+    import os
+
+    path = "./"
+    output_file = "result.csv"
+    file_list = os.listdir(path)
+    file_list_csv = [file for file in file_list if file.endswith(".csv")]
+
+    is_first_file = True
+    for file in file_list_csv:
+        print(os.path.basename(file))
+        with open(file, 'r') as csv_in_file:
+            with open(output_file, 'a') as csv_out_file:
+                freader = csv.reader(csv_in_file)
+                fwriter = csv.writer(csv_out_file)
+                if is_first_file:
+                    for row in freader:
+                        fwriter.writerow(row)
+                    is_first_file = False
+                else:
+                    header = next(freader) # 헤더를 건너뛰는 옵션
+                    for row in freader:
+                        fwriter.writerow(row)
+
+
+# %%
