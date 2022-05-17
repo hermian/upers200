@@ -8,9 +8,9 @@ pd.set_option('mode.chained_assignment',  None) # <==== 경고를 끈다
 # %%
 ##########################################################
 # 필요하면 아래 3라인을 수정하세요
-FILENAME = '퀀트데이터2022.04.29(21년4Q재무데이터반영)'
-YEAR="21년" # 해당파일의 마지막재무데이터 반영년도 (엑셀의 FN열 헤더 참조)
-QUATER="4Q" # 해당파일의 마지막재무데이터 반영분기
+FILENAME = '퀀트데이터2022.05.17(22년1Q실적발표반영)'
+YEAR="22년" # 해당파일의 마지막재무데이터 반영년도 (엑셀의 FN열 헤더 참조)
+QUATER="1Q(E)" # 해당파일의 마지막재무데이터 반영분기
 #########################################################
 header = ['발표POR',
  f'순이익{YEAR}{QUATER}QOQ',
@@ -391,7 +391,7 @@ if __name__ == '__main__':
                     header = next(freader) # 헤더를 건너뛰는 옵션
                     for row in freader:
                         fwriter.writerow(row)
-    df = pd.read_csv(output_file)
+    df = pd.read_csv(output_file).drop_duplicates(['회사명'], keep="first")
     df[['코드번호', '회사명']].to_csv("result_summary.csv", index=False)
 
 
