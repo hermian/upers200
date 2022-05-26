@@ -8,7 +8,7 @@ pd.set_option('mode.chained_assignment',  None) # <==== 경고를 끈다
 # %%
 ##########################################################
 # 필요하면 아래 3라인을 수정하세요
-FILENAME = '퀀트데이터2022.05.25(22년1Q실적발표반영)'
+FILENAME = 'quantking.xlsx'#'퀀트데이터2022.05.25(22년1Q실적발표반영)'
 YEAR="22년" # 해당파일의 마지막재무데이터 반영년도 (엑셀의 FN열 헤더 참조)
 QUATER="1Q(E)" # 해당파일의 마지막재무데이터 반영분기
 #########################################################
@@ -104,8 +104,7 @@ def 역수(값):
     return 새값
 
 # %%
-read_df = pd.read_excel(os.path.join("QuantKing", FILENAME+".xlsx"),
-                        sheet_name='퀀트데이터', skiprows=2, engine='openpyxl')\
+read_df = pd.read_excel(FILENAME, sheet_name='퀀트데이터', skiprows=2, engine='openpyxl')\
             .drop('Unnamed: 0', axis=1)
 columns = read_df.columns.str.replace('\n', '').str.replace(' ', '')
 read_df.columns = columns
@@ -394,7 +393,7 @@ if __name__ == '__main__':
     df = pd.read_csv(output_file).drop_duplicates(['회사명'], keep="first")
     summary_df = df[['코드번호', '회사명']].copy()
     summary_df.columns = ['','종목명']
-    summary_df.to_csv("result_summary.csv", index=False)
+    summary_df.to_csv("매매종목.csv", index=False)
 
 
 # %%

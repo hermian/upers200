@@ -1,17 +1,24 @@
 #%%
+import os
 from turtle import down
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlsplit, parse_qsl, urlencode
+import config
+
+FILENAME='quantking.xlsx'
+
+if os.path.exists(FILENAME):
+    os.remove(FILENAME)
 
 base_url = "http://www.quantking.co.kr"
 url = base_url+"/lib/login_process.php"
 login_info = {
     "Login": "Login",
     "prev_url": "/page/main.php",
-    "U_ID1": "", # id
-    "U_ID2": "gmail.com",
-    "U_Pass": "" # password
+    "U_ID1": config.id, # id
+    "U_ID2": config.mail,
+    "U_Pass": config.pw # password
 }
 
 def download(url, file_name):
@@ -64,7 +71,7 @@ with requests.Session() as s:
     print("+++++++++++++++++++++++++++++++++")
     download_url = base_url+"/page/charge.php?"+urlencode(params)
     print(download_url)
-    download(download_url, "quantking.xlsx")
+    download(download_url, FILENAME)
     print("+++++++++++++++++++++++++++++++++")
 
 '''
