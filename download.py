@@ -1,5 +1,4 @@
 import os
-from turtle import down
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlsplit, parse_qsl, urlencode

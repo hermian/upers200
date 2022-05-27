@@ -104,34 +104,6 @@ def 역수(값):
     return 새값
 
 # %%
-read_df = pd.read_excel(FILENAME, sheet_name='퀀트데이터', skiprows=2, engine='openpyxl')\
-            .drop('Unnamed: 0', axis=1)
-columns = read_df.columns.str.replace('\n', '').str.replace(' ', '')
-read_df.columns = columns
-read_df.set_index('코드번호', inplace=True)
-
-# %%
-df = read_df[header].copy()
-#%%
-고주가제외 = df['주가(원)'] < 250000
-거래대금_5일평균억_1천만원이상 = df['거래대금(5일평균억)'] > 0.1
-영원짜리_쓰레기_제거 = df['주가(원)'] != 0
-스펙제외 = df['스팩=1'] == 0
-중국주제외 = df['본사국내=1'] == 1
-지주사제외 = df['지주사=1'] == 0
-리츠제외 = df['업종(소)'] != '부동산'
-기타금융제외 = df['업종(소)'] != '기타 금융'
-cond = 고주가제외 & 거래대금_5일평균억_1천만원이상 & 영원짜리_쓰레기_제거 & 스펙제외 & \
-       중국주제외 & 지주사제외 & 리츠제외 & 기타금융제외
-df = df[cond]
-# %%
-URL = "http://kind.krx.co.kr/investwarn/adminissue.do?method=searchAdminIssueSub&currentPageSize=5000&pageIndex=1&orderMode=1&orderStat=D&searchMode=&searchCodeType=&searchCorpName=&repIsuSrtCd=&forward=adminissue_down&paxreq=&outsvcno=&marketType=&searchCorpNameTmp="
-관리종목 = pd.read_html(URL)[0]
-관리종목['종목코드'] = 관리종목['종목코드'].map('{:06d}'.format)
-
-관리종목제외 = ~df.index.str[1:].isin(관리종목['종목코드'])
-df = df[관리종목제외]
-# %%
 """ 신마법공식 소형주
 시가총액 하위 20%
 소형주_df = df[df['시가총액(억)'] <=  df['시가총액(억)'].quantile(.2)] #원본은 '='을 빼고 계산했더라
@@ -359,7 +331,35 @@ if __name__ == '__main__':
     #====================================
     # 퀀트킹사이트의 최상단 파일을 다운로드한다
     #====================================
-    real_name = download.download_quantking()
+    # real_name = download.download_quantking()
+
+    read_df = pd.read_excel(FILENAME, sheet_name='퀀트데이터', skiprows=2, engine='openpyxl')\
+                .drop('Unnamed: 0', axis=1)
+    columns = read_df.columns.str.replace('\n', '').str.replace(' ', '')
+    read_df.columns = columns
+    read_df.set_index('코드번호', inplace=True)
+
+    df = read_df[header].copy()
+    고주가제외 = df['주가(원)'] < 250000
+    거래대금_5일평균억_1천만원이상 = df['거래대금(5일평균억)'] > 0.1
+    영원짜리_쓰레기_제거 = df['주가(원)'] != 0
+    스펙제외 = df['스팩=1'] == 0
+    중국주제외 = df['본사국내=1'] == 1
+    지주사제외 = df['지주사=1'] == 0
+    리츠제외 = df['업종(소)'] != '부동산'
+    기타금융제외 = df['업종(소)'] != '기타 금융'
+    cond = 고주가제외 & 거래대금_5일평균억_1천만원이상 & 영원짜리_쓰레기_제거 & 스펙제외 & \
+        중국주제외 & 지주사제외 & 리츠제외 & 기타금융제외
+    df = df[cond]
+    #===============================
+    # 관리종목 제외
+    #===============================
+    URL = "http://kind.krx.co.kr/investwarn/adminissue.do?method=searchAdminIssueSub&currentPageSize=5000&pageIndex=1&orderMode=1&orderStat=D&searchMode=&searchCodeType=&searchCorpName=&repIsuSrtCd=&forward=adminissue_down&paxreq=&outsvcno=&marketType=&searchCorpNameTmp="
+    관리종목 = pd.read_html(URL)[0]
+    관리종목['종목코드'] = 관리종목['종목코드'].map('{:06d}'.format)
+
+    관리종목제외 = ~df.index.str[1:].isin(관리종목['종목코드'])
+    df = df[관리종목제외]
 
     #===============================
     # 종목 추출
@@ -404,4 +404,4 @@ if __name__ == '__main__':
     summary_df.columns = ['','종목명']
     summary_df.to_csv("매매종목.csv", index=False)
 
-    mail.send_mail(real_name, '매매종목.csv')
+    # mail.send_mail(real_name, '매매종목.csv')
