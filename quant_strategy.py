@@ -331,7 +331,7 @@ if __name__ == '__main__':
     #====================================
     # 퀀트킹사이트의 최상단 파일을 다운로드한다
     #====================================
-    # real_name = download.download_quantking()
+    real_name = download.download_quantking()
 
     read_df = pd.read_excel(FILENAME, sheet_name='퀀트데이터', skiprows=2, engine='openpyxl')\
                 .drop('Unnamed: 0', axis=1)
@@ -404,4 +404,4 @@ if __name__ == '__main__':
     summary_df.columns = ['','종목명']
     summary_df.to_csv("매매종목.csv", index=False)
 
-    # mail.send_mail(real_name, '매매종목.csv')
+    mail.send_mail(real_name, '매매종목.csv')
