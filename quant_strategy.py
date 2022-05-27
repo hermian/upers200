@@ -350,9 +350,17 @@ if __name__ == '__main__':
     import csv
     import glob
     import os
+    import mail
+    import download
 
     path = "./"
     [os.remove(f) for f in glob.glob("./*.csv")]
+
+    #====================================
+    # 퀀트킹사이트의 최상단 파일을 다운로드한다
+    #====================================
+    real_name = download.download_quantking()
+
     #===============================
     # 종목 추출
     #===============================
@@ -392,8 +400,8 @@ if __name__ == '__main__':
                         fwriter.writerow(row)
     df = pd.read_csv(output_file).drop_duplicates(['회사명'], keep="first")
     summary_df = df[['코드번호', '회사명']].copy()
+    summary_df.sort_values(by='회사명', inplace=True)
     summary_df.columns = ['','종목명']
     summary_df.to_csv("매매종목.csv", index=False)
 
-
-# %%
+    mail.send_mail(real_name, '매매종목.csv')
