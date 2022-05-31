@@ -11,7 +11,7 @@ import config
 def send_mail(contents, filename='매매종목.csv'):
     email_from = config.email_from
     email_to = config.email_to
-    # email_cc = 'cc1 email, cc2 email'
+    email_cc = config.email_cc
     email_subject = f'{date.today()} Upers 200'
     email_contents = contents
     password = config.email_password
@@ -21,7 +21,7 @@ def send_mail(contents, filename='매매종목.csv'):
     msg['Subject'] = email_subject
     msg['From'] = email_from
     msg['To'] = email_to
-    #msg['Cc'] = email_cc
+    msg['Cc'] = email_cc
 
     msg.attach(body_part)
     with open(filename, 'rb') as fp:
@@ -35,3 +35,6 @@ def send_mail(contents, filename='매매종목.csv'):
     print(msg.as_string())
 
     smtp.quit()
+
+if __name__ == '__main__':
+    send_mail("test ...")
