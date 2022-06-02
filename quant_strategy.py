@@ -402,6 +402,6 @@ if __name__ == '__main__':
     summary_df = df[['코드번호', '회사명']].copy()
     summary_df.sort_values(by='회사명', inplace=True)
     summary_df.columns = ['','종목명']
-    summary_df.to_csv("매매종목.csv", index=False)
+    summary_df.to_csv("매매종목.csv", encoding="cp949", index=False)
 
     mail.send_mail(real_name, '매매종목.csv')
