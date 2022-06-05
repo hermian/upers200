@@ -1,59 +1,13 @@
+#-*- coding: utf-8 -*-
 # %%
 import pandas as pd
 import datetime as dt
 import numpy as np
 import os
-# 무시
+import re
+#
 pd.set_option('mode.chained_assignment',  None) # <==== 경고를 끈다
 # %%
-##########################################################
-# 필요하면 아래 3라인을 수정하세요
-FILENAME = 'quantking.xlsx'#'퀀트데이터2022.05.25(22년1Q실적발표반영)'
-YEAR="22년" # 해당파일의 마지막재무데이터 반영년도 (엑셀의 FN열 헤더 참조)
-QUATER="1Q(E)" # 해당파일의 마지막재무데이터 반영분기
-#########################################################
-header = ['발표POR',
- f'순이익{YEAR}{QUATER}QOQ',
- '1년등락률(%)',
- '발표OPM(%)',
- '발표분기PER',
- 'F스코어지배주주순익>0여부',
- f'순이익{YEAR}{QUATER}YOY',
- '과거GP/A(%)',
- '청산가치비율(NCAV전략)(%)',
- '5년평균OPM',
- '발표PBR',
- f'매출액{YEAR}{QUATER}YOY',
- '업종(대)',
- '과거PFCR',
- 'F스코어영업활동현금흐름>0여부',
- '회사명',
- f'영업이익{YEAR}{QUATER}QOQ',
- '발표NPM증가율(최근분기)',
- '차입금비율(%)',
- f'영업이익{YEAR}{QUATER}YOY',
- '주가(원)',
- '발표자본증가율(최근분기)',
- '업종(소)',
- f'매출액{YEAR}{QUATER}QOQ',
- '1개월등락률(%)',
- '발표PER',
- '발표ROE증가율(최근분기)',
- '시가총액(억)',
- '영업활동현금흐름(억)',
- '주가>20이평',
- '시가배당률(%)',
- '자본(억)',
- 'F스코어점수(9점만점)',
- '발표PSR',
- '발표분기OPM(%)',
- '발표OPM증가율(최근분기)',
- '순이익(지배)(억)',
- 'F스코어신주발행X여부',
- '거래대금(5일평균억)',
- '스팩=1',
- '본사국내=1',
- '지주사=1']
 
 base_cols = ['회사명', '업종(대)', '업종(소)', '주가(원)', '시가총액(억)', '발표PER', '발표PBR', '시가배당률(%)']
 #########################################################
@@ -316,6 +270,24 @@ def 소형주_성장밸류(df1, n, ):  # 소형주 성장B + 슈퍼가치 시총
     _소형주_성장밸류[base_cols].to_csv("시총하위 이익성장+슈퍼가치_new.csv")
     return _소형주_성장밸류['회사명']
 
+def extract_header(real_name):
+    ''' real_name으로 부터 년도와 분기를 추출한다. real_name에는 실적발표반영, 실적데이터반영, 재무데이터반영등이 있다.
+
+        real_name : 퀀트킹 사이트에 올라와 있는 게시판의 제목 ex)퀀트데이터2022.05.25(22년1Q실적발표반영)
+
+        return:
+            year : real_name의 '(..)'에서 년도를 추출 ex) ...(22년1Q...) -> 22년을 추출
+            quater : real_name의 '(..)'에서 분기를 추출 ex) ...(22년1Q...) --> 1Q를 추출 다만 실적이라는 단어가 들어 있으면 '(E)'를 추가한다.
+    '''
+    regexp = re.compile(r'.*\(((\d+년)(\dQ).*)\)')
+    matchobj = regexp.search(real_name)
+    print(matchobj.group(1), matchobj.group(2), matchobj.group(3))
+    year = matchobj.group(2)
+    quater = matchobj.group(3)
+    if '실적' in real_name:
+        quater += '(E)'
+    return year, quater
+
 # 소형주_성장밸류(df.copy(), 20)
 # %%
 if __name__ == '__main__':
@@ -333,13 +305,67 @@ if __name__ == '__main__':
     #====================================
     real_name = download.download_quantking()
 
+    ##########################################################
+    # 필요하면 아래 3라인을 수정하세요
+    FILENAME = 'quantking.xlsx' #'퀀트데이터2022.05.25(22년1Q실적발표반영)'
+    # YEAR="22년" # 해당파일의 마지막재무데이터 반영년도 (엑셀의 FN열 헤더 참조) <== 자동 추출가능?
+    # # 해당파일의 마지막재무데이터 반영분기 (FN열 헤더 : (E)가 들어 갔다 빠졌다 한다.)
+    # # 제목에 "실적데이터반영" 또는 "실적발표반영"이 들어가면 1Q(E)와 같이 E가 들어가고
+    # # 파일이름에 "재무데이터반영"이 들어가면 E가 없어진다.
+    # QUATER="1Q"
+    YEAR, QUATER = extract_header(real_name)
+    print(f'YEAR : {YEAR}, QUATER: {QUATER}')
+    #########################################################
+    HEAD = ['발표POR',
+    f'순이익{YEAR}{QUATER}QOQ',
+    '1년등락률(%)',
+    '발표OPM(%)',
+    '발표분기PER',
+    'F스코어지배주주순익>0여부',
+    f'순이익{YEAR}{QUATER}YOY',
+    '과거GP/A(%)',
+    '청산가치비율(NCAV전략)(%)',
+    '5년평균OPM',
+    '발표PBR',
+    f'매출액{YEAR}{QUATER}YOY',
+    '업종(대)',
+    '과거PFCR',
+    'F스코어영업활동현금흐름>0여부',
+    '회사명',
+    f'영업이익{YEAR}{QUATER}QOQ',
+    '발표NPM증가율(최근분기)',
+    '차입금비율(%)',
+    f'영업이익{YEAR}{QUATER}YOY',
+    '주가(원)',
+    '발표자본증가율(최근분기)',
+    '업종(소)',
+    f'매출액{YEAR}{QUATER}QOQ',
+    '1개월등락률(%)',
+    '발표PER',
+    '발표ROE증가율(최근분기)',
+    '시가총액(억)',
+    '영업활동현금흐름(억)',
+    '주가>20이평',
+    '시가배당률(%)',
+    '자본(억)',
+    'F스코어점수(9점만점)',
+    '발표PSR',
+    '발표분기OPM(%)',
+    '발표OPM증가율(최근분기)',
+    '순이익(지배)(억)',
+    'F스코어신주발행X여부',
+    '거래대금(5일평균억)',
+    '스팩=1',
+    '본사국내=1',
+    '지주사=1']
+
     read_df = pd.read_excel(FILENAME, sheet_name='퀀트데이터', skiprows=2, engine='openpyxl')\
                 .drop('Unnamed: 0', axis=1)
     columns = read_df.columns.str.replace('\n', '').str.replace(' ', '')
     read_df.columns = columns
     read_df.set_index('코드번호', inplace=True)
 
-    df = read_df[header].copy()
+    df = read_df[HEAD].copy()
     고주가제외 = df['주가(원)'] < 250000
     거래대금_5일평균억_1천만원이상 = df['거래대금(5일평균억)'] > 0.1
     영원짜리_쓰레기_제거 = df['주가(원)'] != 0
