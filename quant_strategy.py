@@ -2,9 +2,11 @@
 # %%
 import pandas as pd
 import datetime as dt
+from datetime import date
 import numpy as np
 import os
 import re
+import traceback
 #
 pd.set_option('mode.chained_assignment',  None) # <==== 경고를 끈다
 # %%
@@ -305,129 +307,133 @@ if __name__ == '__main__':
     #====================================
     real_name = download.download_quantking()
 
-    ##########################################################
-    # 필요하면 아래 3라인을 수정하세요
-    FILENAME = 'quantking.xlsx' #'퀀트데이터2022.05.25(22년1Q실적발표반영)'
-    # YEAR="22년" # 해당파일의 마지막재무데이터 반영년도 (엑셀의 FN열 헤더 참조) <== 자동 추출가능?
-    # # 해당파일의 마지막재무데이터 반영분기 (FN열 헤더 : (E)가 들어 갔다 빠졌다 한다.)
-    # # 제목에 "실적데이터반영" 또는 "실적발표반영"이 들어가면 1Q(E)와 같이 E가 들어가고
-    # # 파일이름에 "재무데이터반영"이 들어가면 E가 없어진다.
-    # QUATER="1Q"
-    YEAR, QUATER = extract_header(real_name)
-    print(f'YEAR : {YEAR}, QUATER: {QUATER}')
-    #########################################################
-    HEAD = ['발표POR',
-    f'순이익{YEAR}{QUATER}QOQ',
-    '1년등락률(%)',
-    '발표OPM(%)',
-    '발표분기PER',
-    'F스코어지배주주순익>0여부',
-    f'순이익{YEAR}{QUATER}YOY',
-    '과거GP/A(%)',
-    '청산가치비율(NCAV전략)(%)',
-    '5년평균OPM',
-    '발표PBR',
-    f'매출액{YEAR}{QUATER}YOY',
-    '업종(대)',
-    '과거PFCR',
-    'F스코어영업활동현금흐름>0여부',
-    '회사명',
-    f'영업이익{YEAR}{QUATER}QOQ',
-    '발표NPM증가율(최근분기)',
-    '차입금비율(%)',
-    f'영업이익{YEAR}{QUATER}YOY',
-    '주가(원)',
-    '발표자본증가율(최근분기)',
-    '업종(소)',
-    f'매출액{YEAR}{QUATER}QOQ',
-    '1개월등락률(%)',
-    '발표PER',
-    '발표ROE증가율(최근분기)',
-    '시가총액(억)',
-    '영업활동현금흐름(억)',
-    '주가>20이평',
-    '시가배당률(%)',
-    '자본(억)',
-    'F스코어점수(9점만점)',
-    '발표PSR',
-    '발표분기OPM(%)',
-    '발표OPM증가율(최근분기)',
-    '순이익(지배)(억)',
-    'F스코어신주발행X여부',
-    '거래대금(5일평균억)',
-    '스팩=1',
-    '본사국내=1',
-    '지주사=1']
+    try:
+        ##########################################################
+        # 필요하면 아래 3라인을 수정하세요
+        FILENAME = 'quantking.xlsx' #'퀀트데이터2022.05.25(22년1Q실적발표반영)'
+        # YEAR="22년" # 해당파일의 마지막재무데이터 반영년도 (엑셀의 FN열 헤더 참조) <== 자동 추출가능?
+        # # 해당파일의 마지막재무데이터 반영분기 (FN열 헤더 : (E)가 들어 갔다 빠졌다 한다.)
+        # # 제목에 "실적데이터반영" 또는 "실적발표반영"이 들어가면 1Q(E)와 같이 E가 들어가고
+        # # 파일이름에 "재무데이터반영"이 들어가면 E가 없어진다.
+        # QUATER="1Q"
+        YEAR, QUATER = extract_header(real_name)
+        print(f'YEAR : {YEAR}, QUATER: {QUATER}')
+        #########################################################
+        HEAD = ['발표POR',
+        f'순이익{YEAR}{QUATER}QOQ',
+        '1년등락률(%)',
+        '발표OPM(%)',
+        '발표분기PER',
+        'F스코어지배주주순익>0여부',
+        f'순이익{YEAR}{QUATER}YOY',
+        '과거GP/A(%)',
+        '청산가치비율(NCAV전략)(%)',
+        '5년평균OPM',
+        '발표PBR',
+        f'매출액{YEAR}{QUATER}YOY',
+        '업종(대)',
+        '과거PFCR',
+        'F스코어영업활동현금흐름>0여부',
+        '회사명',
+        f'영업이익{YEAR}{QUATER}QOQ',
+        '발표NPM증가율(최근분기)',
+        '차입금비율(%)',
+        f'영업이익{YEAR}{QUATER}YOY',
+        '주가(원)',
+        '발표자본증가율(최근분기)',
+        '업종(소)',
+        f'매출액{YEAR}{QUATER}QOQ',
+        '1개월등락률(%)',
+        '발표PER',
+        '발표ROE증가율(최근분기)',
+        '시가총액(억)',
+        '영업활동현금흐름(억)',
+        '주가>20이평',
+        '시가배당률(%)',
+        '자본(억)',
+        'F스코어점수(9점만점)',
+        '발표PSR',
+        '발표분기OPM(%)',
+        '발표OPM증가율(최근분기)',
+        '순이익(지배)(억)',
+        'F스코어신주발행X여부',
+        '거래대금(5일평균억)',
+        '스팩=1',
+        '본사국내=1',
+        '지주사=1']
 
-    read_df = pd.read_excel(FILENAME, sheet_name='퀀트데이터', skiprows=2, engine='openpyxl')\
-                .drop('Unnamed: 0', axis=1)
-    columns = read_df.columns.str.replace('\n', '').str.replace(' ', '')
-    read_df.columns = columns
-    read_df.set_index('코드번호', inplace=True)
+        read_df = pd.read_excel(FILENAME, sheet_name='퀀트데이터', skiprows=2, engine='openpyxl')\
+                    .drop('Unnamed: 0', axis=1)
+        columns = read_df.columns.str.replace('\n', '').str.replace(' ', '')
+        read_df.columns = columns
+        read_df.set_index('코드번호', inplace=True)
 
-    df = read_df[HEAD].copy()
-    고주가제외 = df['주가(원)'] < 250000
-    거래대금_5일평균억_1천만원이상 = df['거래대금(5일평균억)'] > 0.1
-    영원짜리_쓰레기_제거 = df['주가(원)'] != 0
-    스펙제외 = df['스팩=1'] == 0
-    중국주제외 = df['본사국내=1'] == 1
-    지주사제외 = df['지주사=1'] == 0
-    리츠제외 = df['업종(소)'] != '부동산'
-    기타금융제외 = df['업종(소)'] != '기타 금융'
-    cond = 고주가제외 & 거래대금_5일평균억_1천만원이상 & 영원짜리_쓰레기_제거 & 스펙제외 & \
-        중국주제외 & 지주사제외 & 리츠제외 & 기타금융제외
-    df = df[cond]
-    #===============================
-    # 관리종목 제외
-    #===============================
-    URL = "http://kind.krx.co.kr/investwarn/adminissue.do?method=searchAdminIssueSub&currentPageSize=5000&pageIndex=1&orderMode=1&orderStat=D&searchMode=&searchCodeType=&searchCorpName=&repIsuSrtCd=&forward=adminissue_down&paxreq=&outsvcno=&marketType=&searchCorpNameTmp="
-    관리종목 = pd.read_html(URL)[0]
-    관리종목['종목코드'] = 관리종목['종목코드'].map('{:06d}'.format)
+        df = read_df[HEAD].copy()
+        고주가제외 = df['주가(원)'] < 250000
+        거래대금_5일평균억_1천만원이상 = df['거래대금(5일평균억)'] > 0.1
+        영원짜리_쓰레기_제거 = df['주가(원)'] != 0
+        스펙제외 = df['스팩=1'] == 0
+        중국주제외 = df['본사국내=1'] == 1
+        지주사제외 = df['지주사=1'] == 0
+        리츠제외 = df['업종(소)'] != '부동산'
+        기타금융제외 = df['업종(소)'] != '기타 금융'
+        cond = 고주가제외 & 거래대금_5일평균억_1천만원이상 & 영원짜리_쓰레기_제거 & 스펙제외 & \
+            중국주제외 & 지주사제외 & 리츠제외 & 기타금융제외
+        df = df[cond]
+        #===============================
+        # 관리종목 제외
+        #===============================
+        URL = "http://kind.krx.co.kr/investwarn/adminissue.do?method=searchAdminIssueSub&currentPageSize=5000&pageIndex=1&orderMode=1&orderStat=D&searchMode=&searchCodeType=&searchCorpName=&repIsuSrtCd=&forward=adminissue_down&paxreq=&outsvcno=&marketType=&searchCorpNameTmp="
+        관리종목 = pd.read_html(URL)[0]
+        관리종목['종목코드'] = 관리종목['종목코드'].map('{:06d}'.format)
 
-    관리종목제외 = ~df.index.str[1:].isin(관리종목['종목코드'])
-    df = df[관리종목제외]
+        관리종목제외 = ~df.index.str[1:].isin(관리종목['종목코드'])
+        df = df[관리종목제외]
 
-    #===============================
-    # 종목 추출
-    #===============================
-    신마법공식_소형주(df.copy(), 20)
-    전종목_성장C(df.copy(), 20)
-    소형주_밸류C(df.copy(), 20)
-    저가주_안전마진(df.copy(), 20)
-    저가주_성장A(df.copy(), 20)
-    전종목_배당성장(df.copy(), 20)
-    소형주_해자밸류(df.copy(), 20)
-    소형주_해자성장A(df.copy(), 20)
-    소형주_해자성장B(df.copy(), 20)
-    전종목_해자성장B(df.copy(), 20)
-    중형주_성장B(df.copy(), 20)
-    중형주_밸류C(df.copy(), 20)
-    소형주_컨트래리안A(df.copy(), 20)
-    소형주_성장밸류(df.copy(), 20)
-    #===============================
-    output_file = "result.csv"
-    file_list = os.listdir(path)
-    file_list_csv = [file for file in file_list if file.endswith(".csv")]
+        #===============================
+        # 종목 추출
+        #===============================
+        신마법공식_소형주(df.copy(), 20)
+        전종목_성장C(df.copy(), 20)
+        소형주_밸류C(df.copy(), 20)
+        저가주_안전마진(df.copy(), 20)
+        저가주_성장A(df.copy(), 20)
+        전종목_배당성장(df.copy(), 20)
+        소형주_해자밸류(df.copy(), 20)
+        소형주_해자성장A(df.copy(), 20)
+        소형주_해자성장B(df.copy(), 20)
+        전종목_해자성장B(df.copy(), 20)
+        중형주_성장B(df.copy(), 20)
+        중형주_밸류C(df.copy(), 20)
+        소형주_컨트래리안A(df.copy(), 20)
+        소형주_성장밸류(df.copy(), 20)
+        #===============================
+        output_file = "result.csv"
+        file_list = os.listdir(path)
+        file_list_csv = [file for file in file_list if file.endswith(".csv")]
 
-    is_first_file = True
-    for file in file_list_csv:
-        print(os.path.basename(file))
-        with open(file, 'r') as csv_in_file:
-            with open(output_file, 'a') as csv_out_file:
-                freader = csv.reader(csv_in_file)
-                fwriter = csv.writer(csv_out_file)
-                if is_first_file:
-                    for row in freader:
-                        fwriter.writerow(row)
-                    is_first_file = False
-                else:
-                    header = next(freader) # 헤더를 건너뛰는 옵션
-                    for row in freader:
-                        fwriter.writerow(row)
-    df = pd.read_csv(output_file).drop_duplicates(['회사명'], keep="first")
-    summary_df = df[['코드번호', '회사명']].copy()
-    summary_df.sort_values(by='회사명', inplace=True)
-    summary_df.columns = ['','종목명']
-    summary_df.to_csv("매매종목.csv", encoding="cp949", index=False)
+        is_first_file = True
+        for file in file_list_csv:
+            print(os.path.basename(file))
+            with open(file, 'r') as csv_in_file:
+                with open(output_file, 'a') as csv_out_file:
+                    freader = csv.reader(csv_in_file)
+                    fwriter = csv.writer(csv_out_file)
+                    if is_first_file:
+                        for row in freader:
+                            fwriter.writerow(row)
+                        is_first_file = False
+                    else:
+                        header = next(freader) # 헤더를 건너뛰는 옵션
+                        for row in freader:
+                            fwriter.writerow(row)
+        df = pd.read_csv(output_file).drop_duplicates(['회사명'], keep="first")
+        summary_df = df[['코드번호', '회사명']].copy()
+        summary_df.sort_values(by='회사명', inplace=True)
+        summary_df.columns = ['','종목명']
+        summary_df.to_csv("매매종목.csv", encoding="cp949", index=False)
 
-    mail.send_mail(real_name, '매매종목.csv')
+        mail.send_mail(real_name, '매매종목.csv')
+    except Exception as e:
+        print(e)
+        mail.send_mail(f'{real_name}\n\n{e}\n\n\n{traceback.format_exc()}', f'!!!Error!!! {date.today()} Upers 200')

@@ -1,4 +1,4 @@
-#
+import os
 import smtplib
 from datetime import date
 from email.mime.text import MIMEText
@@ -8,11 +8,11 @@ from email.mime.application import MIMEApplication
 import config
 
 
-def send_mail(contents, filename='매매종목.csv'):
+def send_mail(contents, subject=f'{date.today()} Upers 200', filename='매매종목.csv'):
     email_from = config.email_from
     email_to = config.email_to
     email_cc = config.email_cc
-    email_subject = f'{date.today()} Upers 200'
+    email_subject = subject
     email_contents = contents
     password = config.email_password
 
@@ -24,8 +24,9 @@ def send_mail(contents, filename='매매종목.csv'):
     msg['Cc'] = email_cc
 
     msg.attach(body_part)
-    with open(filename, 'rb') as fp:
-        msg.attach(MIMEApplication(fp.read(), Name=filename))
+    if os.path.exists(filename):
+        with open(filename, 'rb') as fp:
+            msg.attach(MIMEApplication(fp.read(), Name=filename))
 
     smtp = smtplib.SMTP('smtp.gmail.com', 587)
     smtp.starttls()
