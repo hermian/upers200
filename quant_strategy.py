@@ -433,7 +433,7 @@ if __name__ == '__main__':
         summary_df.columns = ['','종목명']
         summary_df.to_csv("매매종목.csv", encoding="cp949", index=False)
 
-        mail.send_mail(real_name, '매매종목.csv')
+        mail.send_mail(real_name)
     except Exception as e:
         print(e)
         mail.send_mail(f'{real_name}\n\n{e}\n\n\n{traceback.format_exc()}', f'!!!Error!!! {date.today()} Upers 200')
