@@ -2,15 +2,20 @@
 # %%
 import pandas as pd
 import datetime as dt
-from datetime import date
+from datetime import date, datetime
 import numpy as np
 import os
 import re
 import traceback
+import FinanceDataReader as fdr
 #
 pd.set_option('mode.chained_assignment',  None) # <==== 경고를 끈다
 # %%
-
+end = datetime.today()
+start = (end - pd.DateOffset(days=10))
+kospi = fdr.DataReader('KS11', start, end)
+is_change_month = kospi.index[-1].month != kospi.index[-2].month
+# %%
 base_cols = ['회사명', '업종(대)', '업종(소)', '주가(원)', '시가총액(억)', '발표PER', '발표PBR', '시가배당률(%)']
 #########################################################
 # %%
@@ -433,7 +438,8 @@ if __name__ == '__main__':
         summary_df.columns = ['','종목명']
         summary_df.to_csv("매매종목.csv", encoding="cp949", index=False)
 
-        mail.send_mail(real_name)
+        if is_change_month:
+            mail.send_mail(real_name)
     except Exception as e:
         print(e)
         mail.send_mail(f'{real_name}\n\n{e}\n\n\n{traceback.format_exc()}', f'!!!Error!!! {date.today()} Upers 200')
