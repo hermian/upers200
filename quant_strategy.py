@@ -286,7 +286,7 @@ def extract_header(real_name):
             year : real_name의 '(..)'에서 년도를 추출 ex) ...(22년1Q...) -> 22년을 추출
             quater : real_name의 '(..)'에서 분기를 추출 ex) ...(22년1Q...) --> 1Q를 추출 다만 실적이라는 단어가 들어 있으면 '(E)'를 추가한다.
     '''
-    regexp = re.compile(r'.*\(((\d+년)(\dQ).*)\)')
+    regexp = re.compile(r'.*\(((\d+년)\s+(\dQ).*)\)')
     matchobj = regexp.search(real_name)
     print(matchobj.group(1), matchobj.group(2), matchobj.group(3))
     year = matchobj.group(2)
