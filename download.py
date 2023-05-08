@@ -1,23 +1,23 @@
+#%%
 import os
 import requests
+import json
 from bs4 import BeautifulSoup
 from urllib.parse import urlsplit, parse_qsl, urlencode
 import config
-
+#%%
 DOWNLOADED_FILENAME='quantking.xlsx'
 
 def download_quantking():
     if os.path.exists(DOWNLOADED_FILENAME):
         os.remove(DOWNLOADED_FILENAME)
 
-    base_url = "http://www.quantking.co.kr"
-    url = base_url+"/lib/login_process.php"
+    base_url = "http://quantking.net"
+    url = base_url+"/login"
     login_info = {
-        "Login": "Login",
-        "prev_url": "/page/main.php",
-        "U_ID1": config.id, # id
-        "U_ID2": config.mail,
-        "U_Pass": config.pw # password
+        "id": config.id, # id
+        "isAutoSave": False,
+        "password": config.pw # password
     }
 
     def download(url, file_name):
@@ -29,46 +29,27 @@ def download_quantking():
         req = s.post(url, data=login_info)
         print(req.status_code)
 
-        메뉴_유료용 = base_url+"/page/charge.php?boardid=JS_board_charge&mode=list"
+        메뉴_유료용 = "https://api.quantking.net/api/v1/user/board/membership?limit=10&page=1"
         r = s.get(메뉴_유료용)
         print(r.status_code)
 
-        soup = BeautifulSoup(r.text, 'lxml')
-        links = soup.find_all("a")
-        for a in links:
-            href = a.attrs['href']
-            text = a.text
-            if text != None and '퀀트데이터' in text:
-                print(f"{text} ==> {href}")
-                break
+        # soup = BeautifulSoup(r.text, 'lxml')
+        # links = soup.find_all("a")
+        # for a in links:
+        #     href = a.attrs['href']
+        #     text = a.text
+        #     if text != None and '퀀트데이터' in text:
+        #         print(f"{text} ==> {href}")
+        #         break
         # href = "/page/charge.php?boardid=JS_board_charge&mode=view&no=1079&start=0&search_str=&val=""
         # http://www.quantking.co.kr/page/charge.php?boardid=JS_board_charge&mode=view&no=1079&start=0&search_str=&val=
+        result = json.loads(r.text)
 
-        download_link_url = base_url+href
-        r = s.get(download_link_url, headers=dict(referer = "http://www.quantking.co.kr/page/charge.php?boardid=JS_board_charge&mode=list"))
-        print(r.status_code)
-        # print(r.text)
-        soup = BeautifulSoup(r.text, 'lxml')
-        file_name=soup.find('input', {'name':'file_name'}).get('value')
-        real_name = soup.find('input', {'name':'real_name'}).get('value')
-        print(f"file_name:{file_name}")
-        print(f"real_name:{real_name}")
-        p = dict(parse_qsl(urlsplit(href).query))
-        params=dict()
-        params['LinkPage'] = 'board'
-        params['boardid'] = 'JS_board_charge'
-        params['mode'] = 'view'
-        params['no'] = p['no']
-        params['start'] = '0'
-        params['val'] = ''
-        params['sort'] = ''
-        params['file_name'] = file_name
-        params['real_name'] = real_name
-        params['mode_X'] = 'download'
-        params['fd'] = '..'
-        print("+++++++++++++++++++++++++++++++++")
-        download_url = base_url+"/page/charge.php?"+urlencode(params)
+        download_url = result['items'][0]['fileList'][0]
+        real_name = result['items'][0]['title']
         print(download_url)
+        print(f"real_name: {real_name}")
+
         download(download_url, DOWNLOADED_FILENAME)
         print("+++++++++++++++++++++++++++++++++")
         return real_name
@@ -110,5 +91,5 @@ if __name__ == '__main__':
     mode_X: download
     fd: ..
     '''
-
+    download_quantking()
 # %%
