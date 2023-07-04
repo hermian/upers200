@@ -20,7 +20,7 @@ def send_mail(contents, subject=f'{date.today()} Upers 200', filename='매매종
     body_part = MIMEText(email_contents)
     msg['Subject'] = email_subject
     msg['From'] = email_from
-    msg['To'] = email_to
+    msg['To'] = ','.join(email_to)
     msg['Cc'] = email_cc
 
     msg.attach(body_part)
@@ -38,4 +38,4 @@ def send_mail(contents, subject=f'{date.today()} Upers 200', filename='매매종
     smtp.quit()
 
 if __name__ == '__main__':
-    send_mail("test ...")
+    send_mail("...test ...", "TEST")
