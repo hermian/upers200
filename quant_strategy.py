@@ -291,8 +291,8 @@ def extract_header(real_name):
     print(matchobj.group(1), matchobj.group(2), matchobj.group(3))
     year = matchobj.group(2)
     quater = matchobj.group(3)
-    if '실적' in real_name:
-        quater += '(E)'
+    #if '실적' in real_name: #XXX 파일이름 변경으로 뭔가 다른 로직 필요
+    #    quater += '(E)'
     return year, quater
 
 # 소형주_성장밸류(df.copy(), 20)
@@ -389,8 +389,9 @@ if __name__ == '__main__':
         #===============================
         URL = "http://kind.krx.co.kr/investwarn/adminissue.do?method=searchAdminIssueSub&currentPageSize=5000&pageIndex=1&orderMode=1&orderStat=D&searchMode=&searchCodeType=&searchCorpName=&repIsuSrtCd=&forward=adminissue_down&paxreq=&outsvcno=&marketType=&searchCorpNameTmp="
         관리종목 = pd.read_html(URL)[0].dropna()
-        관리종목['종목코드'] = 관리종목['종목코드'].astype('int')
-        관리종목['종목코드'] = 관리종목['종목코드'].map('{:06d}'.format)
+        if not isinstance(관리종목['종목코드'].values[0], str):
+            관리종목['종목코드'] = 관리종목['종목코드'].astype('int')
+            관리종목['종목코드'] = 관리종목['종목코드'].map('{:06d}'.format)
 
         관리종목제외 = ~df.index.str[1:].isin(관리종목['종목코드'])
         df = df[관리종목제외]
