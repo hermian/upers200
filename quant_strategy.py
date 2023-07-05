@@ -322,8 +322,16 @@ if __name__ == '__main__':
         # # 파일이름에 "재무데이터반영"이 들어가면 E가 없어진다.
         # QUATER="1Q"
         YEAR, QUATER = extract_header(real_name)
-        print(f'YEAR : {YEAR}, QUATER: {QUATER}')
+        print(f'@@@ YEAR : {YEAR}, QUATER: {QUATER}')
         #########################################################
+        read_df = pd.read_excel(FILENAME, sheet_name='퀀트데이터', skiprows=1, engine='openpyxl')
+        columns = read_df.columns.str.replace('\n', '').str.replace(' ', '')
+        read_df.columns = columns
+        read_df.set_index('코드', inplace=True)
+        if f'EPS{YEAR}{QUATER}(E)YOY' in columns:
+            print('@@@ is (E) @@@')
+            QUATER += '(E)'
+
         HEAD = ['POR',
         f'지배순이익{YEAR}{QUATER}QOQ',
         '1년등락률(%)',
@@ -367,10 +375,6 @@ if __name__ == '__main__':
         '해외본사=1',
         '지주사=1']
 
-        read_df = pd.read_excel(FILENAME, sheet_name='퀀트데이터', skiprows=1, engine='openpyxl')
-        columns = read_df.columns.str.replace('\n', '').str.replace(' ', '')
-        read_df.columns = columns
-        read_df.set_index('코드', inplace=True)
 
         df = read_df[HEAD].copy()
         고주가제외 = df['주가(원)'] < 250000
