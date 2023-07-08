@@ -331,7 +331,7 @@ if __name__ == '__main__':
             print('@@@ is (E) @@@')
             QUATER += '(E)'
         print(f'@@@ YEAR : {YEAR}, QUATER: {QUATER}')
-        with open('quantking_year_quater.txt', 'w') as f:
+        with open('quantking_year_quarter.txt', 'w') as f:
             f.write(f"{YEAR}, {QUATER}")
 
         HEAD = ['POR',
