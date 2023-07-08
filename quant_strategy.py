@@ -322,7 +322,6 @@ if __name__ == '__main__':
         # # 파일이름에 "재무데이터반영"이 들어가면 E가 없어진다.
         # QUATER="1Q"
         YEAR, QUATER = extract_header(real_name)
-        print(f'@@@ YEAR : {YEAR}, QUATER: {QUATER}')
         #########################################################
         read_df = pd.read_excel(FILENAME, sheet_name='퀀트데이터', skiprows=1, engine='openpyxl')
         columns = read_df.columns.str.replace('\n', '').str.replace(' ', '')
@@ -331,6 +330,9 @@ if __name__ == '__main__':
         if f'EPS{YEAR}{QUATER}(E)YOY' in columns:
             print('@@@ is (E) @@@')
             QUATER += '(E)'
+        print(f'@@@ YEAR : {YEAR}, QUATER: {QUATER}')
+        with open('quantking_year_quater.txt', 'w') as f:
+            f.write(f"{YEAR}, {QUATER}")
 
         HEAD = ['POR',
         f'지배순이익{YEAR}{QUATER}QOQ',
