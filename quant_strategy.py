@@ -7,14 +7,18 @@ import numpy as np
 import os
 import re
 import traceback
+import requests as rq   
+from io import BytesIO
 import FinanceDataReader as fdr
+from pykrx import stock
 #
 pd.set_option('mode.chained_assignment',  None) # <==== 경고를 끈다
 # %%
 end = datetime.today()
 start = (end - pd.DateOffset(days=10))
-kospi = fdr.DataReader('KS11', start, end)
-is_change_month = kospi.index[-1].month != kospi.index[-2].month
+#kospi = fdr.DataReader('KS11', start, end)
+kospi = stock.get_index_ohlcv(start, end, '1001')
+is_change_month = kospi.index[-1].month != end.month
 # %%
 base_cols = ['회사명', '업종대', '업종소', '주가(원)', '시가총액(억)', 'PER', 'PBR', '연간배당률(%)']
 #########################################################
@@ -53,7 +57,7 @@ def 랭킹합계(sr):
 def 종합_랭킹_계산(df, 역수변환=False):
     df = df[(df != 0).all(axis=1)] # 값이 0인 열은 제거한다.
     if 역수변환:
-        df = df.applymap(역수)
+        df = df.map(역수)
 
     랭크변환_df = df.rank(ascending=False) # 값 큰게 순위가 높음 (내림차순) 숫자가 작을수록 좋음
     랭크합산_df = 랭크변환_df.apply(랭킹합계, axis=1)
@@ -116,7 +120,7 @@ def 소형주_밸류C(df1, n):  # 소형주 밸류C 시총 하위 20%에서 PFCR
 
     cols = ['PFCR', 'PSR', 'POR', 'PER', '분기PER', 'PBR']
     df1 = df1[(df1[cols] != 0).all(axis=1)] #하나라도 0이면 제외
-    df1['종합순위'] = df1[cols].applymap(역수).rank(ascending=False).mean(axis=1)
+    df1['종합순위'] = df1[cols].map(역수).rank(ascending=False).mean(axis=1)
     df1 = df1[df1['종합순위'] <= df1['종합순위'].quantile(.2)]
     _소형주_밸류C = df1.sort_values(by='주가(원)').head(n)
     _소형주_밸류C[base_cols].to_csv("시총하위 슈퍼가치저가주 전략_new.csv")
@@ -286,7 +290,7 @@ def extract_header(real_name):
             year : real_name의 '(..)'에서 년도를 추출 ex) ...(22년1Q...) -> 22년을 추출
             quater : real_name의 '(..)'에서 분기를 추출 ex) ...(22년1Q...) --> 1Q를 추출 다만 실적이라는 단어가 들어 있으면 '(E)'를 추가한다.
     '''
-    regexp = re.compile(r'.*\(((\d+년)\s+(\dQ).*)\)')
+    regexp = re.compile(r'.*\(((\d+년)\s*(\dQ).*)\)')
     matchobj = regexp.search(real_name)
     print(matchobj.group(1), matchobj.group(2), matchobj.group(3))
     year = matchobj.group(2)
@@ -294,6 +298,40 @@ def extract_header(real_name):
     #if '실적' in real_name: #XXX 파일이름 변경으로 뭔가 다른 로직 필요
     #    quater += '(E)'
     return year, quater
+#%%
+def 관리종목다운로드():
+    ''' url : https://open.krx.co.kr/contents/MKD/10/1002/10020401/MKD10020401.jsp
+    start, end를 넣지 않으면 마지막 working day의 신고가를 조회한다.
+    '''
+    # STEP 01: Generate OTP
+    gen_otp_url = 'http://open.krx.co.kr/contents/COM/GenerateOTP.jspx'
+    gen_otp_data = {
+        'name':'fileDown',
+        'filetype':'csv',
+        'url':'MKD/04/0403/04030100/mkd04030100',
+        'gubun':'ALL', #시장구분: ALL=전체, STK=코스피, KSQ=코스피
+        'isu_cd': '',
+        'pagePath':'/contents/MKD/04/0403/04030100/MKD04030100.jsp',
+    }
+    # print(gen_otp_data)
+    headers = {'Referer': 'http://open.krx.co.kr/contents/MKD/10/1002/10020401/MKD10020401.jsp',
+               'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.141 Whale/3.15.136.29 Safari/537.36'}
+    r = rq.post(gen_otp_url, gen_otp_data, headers=headers)
+    code = r.content
+
+    # STEP 02: download
+    down_url = 'http://file.krx.co.kr/download.jspx'
+    down_data = {
+        'code': code,
+    }
+
+    headers = {'Referer': 'http://open.krx.co.kr',
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.141 Whale/3.15.136.29 Safari/537.36'}
+    r = rq.post(down_url, down_data, headers=headers)
+    df = pd.read_csv(BytesIO(r.content))
+    # df['종목코드'] = df['종목코드'].apply(lambda x: '{:0>6d}'.format(x))
+
+    return df    
 
 # 소형주_성장밸류(df.copy(), 20)
 # %%
@@ -311,6 +349,7 @@ if __name__ == '__main__':
     # 퀀트킹사이트의 최상단 파일을 다운로드한다
     #====================================
     real_name = download.download_quantking()
+    # real_name = '퀀트데이터 2024.08.07+ 4대포트 (24년1Q 재무데이터반영)'
 #%%
     try:
         ##########################################################
@@ -393,14 +432,15 @@ if __name__ == '__main__':
         #===============================
         # 관리종목 제외
         #===============================
-        URL = "http://kind.krx.co.kr/investwarn/adminissue.do?method=searchAdminIssueSub&currentPageSize=5000&pageIndex=1&orderMode=1&orderStat=D&searchMode=&searchCodeType=&searchCorpName=&repIsuSrtCd=&forward=adminissue_down&paxreq=&outsvcno=&marketType=&searchCorpNameTmp="
-        관리종목 = pd.read_html(URL)[0].dropna()
-        if not isinstance(관리종목['종목코드'].values[0], str):
-            관리종목['종목코드'] = 관리종목['종목코드'].astype('int')
-            관리종목['종목코드'] = 관리종목['종목코드'].map('{:06d}'.format)
+        # URL = "http://kind.krx.co.kr/investwarn/adminissue.do?method=searchAdminIssueSub&currentPageSize=5000&pageIndex=1&orderMode=1&orderStat=D&searchMode=&searchCodeType=&searchCorpName=&repIsuSrtCd=&forward=adminissue_down&paxreq=&outsvcno=&marketType=&searchCorpNameTmp="
+        # 관리종목 = pd.read_html(URL)[0].dropna()
+        #관리종목 = 관리종목다운로드()
+        # if not isinstance(관리종목['종목코드'].values[0], str):
+        #     관리종목['종목코드'] = 관리종목['종목코드'].astype('int')
+        #     관리종목['종목코드'] = 관리종목['종목코드'].map('{:06d}'.format)
 
-        관리종목제외 = ~df.index.str[1:].isin(관리종목['종목코드'])
-        df = df[관리종목제외]
+        #관리종목제외 = ~df.index.str[1:].isin(관리종목['종목코드'])
+        #df = df[관리종목제외]
 
         #===============================
         # 종목 추출
@@ -446,6 +486,7 @@ if __name__ == '__main__':
         summary_df.to_csv("매매종목.csv", encoding="cp949", index=False)
 
         if is_change_month:
+            print("sendd mail")
             mail.send_mail(real_name)
     except Exception as e:
         print(e)
