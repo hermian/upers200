@@ -1,0 +1,15 @@
+[project]
+name = "upers200"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+    "requests",
+    "pandas",
+    "beautifulsoup4",
+    "openpyxl",
+    "finance-datareader",
+    "pykrx",
+    "setuptools>=70,<82",
+    "numpy",
+    "dotenv>=0.9.9",
+]
