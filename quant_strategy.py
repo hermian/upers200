@@ -1,4 +1,10 @@
 # -*- coding: utf-8 -*-
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+load_dotenv(Path.home() / ".env", override=False)
+
 # %%
 import pandas as pd
 import datetime as dt
@@ -468,8 +474,9 @@ if __name__ == "__main__":
         read_df = pd.read_excel(
             FILENAME, sheet_name="퀀트데이터", skiprows=1, engine="openpyxl"
         )
-        columns = read_df.columns.str.replace("\n", "").str.replace(" ", "")
-        read_df.columns = columns
+        read_df.columns = read_df.columns.str.replace("\n", "").str.replace(" ", "")
+        read_df.rename(columns=lambda x: "회사명" if x.startswith("회사명") else x, inplace=True)
+        columns = read_df.columns
         read_df.set_index("코드", inplace=True)
         if f"EPS{YEAR}{QUATER}(E)YOY" in columns:
             print("@@@ is (E) @@@")
