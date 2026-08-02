@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+*.csv
+*.xlsx
+*.bak
+quantking_year_quarter.txt
+.gjc/
+config.py
