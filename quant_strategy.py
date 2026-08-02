@@ -37,6 +37,19 @@ base_cols = [
     "PBR",
     "연간배당률(%)",
 ]
+# Module-level default year & quarter initialization
+YEAR = "26년"
+QUATER = "2Q"
+if os.path.exists("quantking_year_quarter.txt"):
+    try:
+        with open("quantking_year_quarter.txt", "r", encoding="utf-8") as _f:
+            _content = _f.read().strip()
+            if _content and "," in _content:
+                _y, _q = _content.split(",", 1)
+                YEAR = _y.strip()
+                QUATER = _q.strip()
+    except Exception:
+        pass
 
 
 #########################################################
@@ -50,15 +63,17 @@ def 시가총액상위20퍼센트(df):
 
 
 # %%
-def 매출액YOYQOQ영업이익YOYQOQ순이익YOYQOQ_0이상(df):
-    df = df[df[f"매출액{YEAR}{QUATER}YOY"] >= 0]
-    df = df[df[f"매출액{YEAR}{QUATER}QOQ"] >= 0]
+def 매출액YOYQOQ영업이익YOYQOQ순이익YOYQOQ_0이상(df, year=None, quater=None):
+    y = year or YEAR
+    q = quater or QUATER
+    df = df[df[f"매출액{y}{q}YOY"] >= 0]
+    df = df[df[f"매출액{y}{q}QOQ"] >= 0]
 
-    df = df[df[f"영업이익{YEAR}{QUATER}YOY"] >= 0]
-    df = df[df[f"영업이익{YEAR}{QUATER}QOQ"] >= 0]
+    df = df[df[f"영업이익{y}{q}YOY"] >= 0]
+    df = df[df[f"영업이익{y}{q}QOQ"] >= 0]
 
-    df = df[df[f"지배순이익{YEAR}{QUATER}YOY"] >= 0]
-    df = df[df[f"지배순이익{YEAR}{QUATER}QOQ"] >= 0]
+    df = df[df[f"지배순이익{y}{q}YOY"] >= 0]
+    df = df[df[f"지배순이익{y}{q}QOQ"] >= 0]
 
     return df
 
@@ -131,7 +146,9 @@ def 신마법공식_소형주(df1, n):
 # cols = ['GP/A(%)','차입률(%)', '자본총계']
 # 신마법공식_소형주(df.copy(), 20)
 # %%
-def 전종목_성장C(df1, n):  # 전종목 성장C 실적 상승 종목 중 F스코어 정렬 (매우합격)
+def 전종목_성장C(
+    df1, n, year=None, quater=None
+):  # 전종목 성장C 실적 상승 종목 중 F스코어 정렬 (매우합격)
     """매출액YOY->매출액QQQ->영업이익YOY->영업이익QOQ->순이익YOY->순이익QOQ
     --> 영업활동현금흐름(억) 0 이상 -> 지배순이익 0 이상
     --> F스코어높은 순정렬
@@ -139,12 +156,14 @@ def 전종목_성장C(df1, n):  # 전종목 성장C 실적 상승 종목 중 F�
     https://data-newbie.tistory.com/523 pandas 의 filter 함수로 변수 선택하기
     FIXME: 원본과 결과가 다르다.
     """
-    df1 = 매출액YOYQOQ영업이익YOYQOQ순이익YOYQOQ_0이상(df1)
+    y = year or YEAR
+    q = quater or QUATER
+    df1 = 매출액YOYQOQ영업이익YOYQOQ순이익YOYQOQ_0이상(df1, year=y, quater=q)
     df1 = 영업활동현금흐름_순이익지배_0이상(df1)
 
     # FIXME: 동일 점수대에 대한 sorting 기준은.=> 전분기 대비 영업이익이 높은 것으로 정렬
     _전종목_성장C = df1.sort_values(
-        by=["F스코어점수(9점만점)", f"영업이익{YEAR}{QUATER}QOQ"], ascending=False
+        by=["F스코어점수(9점만점)", f"영업이익{y}{q}QOQ"], ascending=False
     ).head(n)
     _전종목_성장C[base_cols].to_csv("실적 성장 F우량주 전략_new.csv")
     return _전종목_성장C["회사명"]
@@ -209,18 +228,22 @@ def 전종목_배당성장(df1, n):  # 전종목 배당성장 실적 상승 종�
 
 
 # %%
-def 소형주_해자밸류(df1, n):  # 소형주 해자밸류 실적 상승 종목 중 슈퍼가치주 (매우합격)
+def 소형주_해자밸류(
+    df1, n, year=None, quater=None
+):  # 소형주 해자밸류 실적 상승 종목 중 슈퍼가치주 (매우합격)
+    y = year or YEAR
+    q = quater or QUATER
     df1 = 시가총액하위20퍼센트(df1)
     df1 = 영업활동현금흐름_순이익지배_0이상(df1)
 
     매출영업순이익성장 = df1[
         [
-            f"매출액{YEAR}{QUATER}YOY",
-            f"매출액{YEAR}{QUATER}QOQ",
-            f"영업이익{YEAR}{QUATER}YOY",
-            f"영업이익{YEAR}{QUATER}QOQ",
-            f"지배순이익{YEAR}{QUATER}YOY",
-            f"지배순이익{YEAR}{QUATER}QOQ",
+            f"매출액{y}{q}YOY",
+            f"매출액{y}{q}QOQ",
+            f"영업이익{y}{q}YOY",
+            f"영업이익{y}{q}QOQ",
+            f"지배순이익{y}{q}YOY",
+            f"지배순이익{y}{q}QOQ",
         ]
     ]
     매출영업순이익성장종합랭킹 = 종합_랭킹_계산(매출영업순이익성장, True)
@@ -299,20 +322,22 @@ def 시가총액중형주(df):
 
 # %%
 def 중형주_성장B(
-    df1, n
+    df1, n, year=None, quater=None
 ):  # 중형주 성장B 시총중위 종목중 신F스코어 통과 종목중 실적 성장률
     """FIXME: 결과 완전히 다름, 시가총액중형주() 함수부터 검토 필요"""
+    y = year or YEAR
+    q = quater or QUATER
     df1 = 시가총액중형주(df1)
     df1 = 신F스코어_3점이상(df1)
 
     이익성장률_컬럼추출 = df1[
         [
-            f"매출액{YEAR}{QUATER}YOY",
-            f"매출액{YEAR}{QUATER}QOQ",
-            f"영업이익{YEAR}{QUATER}YOY",
-            f"영업이익{YEAR}{QUATER}QOQ",
-            f"지배순이익{YEAR}{QUATER}YOY",
-            f"지배순이익{YEAR}{QUATER}QOQ",
+            f"매출액{y}{q}YOY",
+            f"매출액{y}{q}QOQ",
+            f"영업이익{y}{q}YOY",
+            f"영업이익{y}{q}QOQ",
+            f"지배순이익{y}{q}YOY",
+            f"지배순이익{y}{q}QOQ",
         ]
     ]
     실적성장이익률우량주 = df1.loc[종합_랭킹_계산(이익성장률_컬럼추출).index]
@@ -357,7 +382,11 @@ def 소형주_컨트래리안A(
 def 소형주_성장밸류(
     df1,
     n,
+    year=None,
+    quater=None,
 ):  # 소형주 성장B + 슈퍼가치 시총하위 종목중 신F스코어 통과 종목중 실적 성장률 + 슈퍼가치
+    y = year or YEAR
+    q = quater or QUATER
     df1 = 시가총액하위20퍼센트(df1)
     df1 = 신F스코어_3점이상(df1)
 
@@ -366,12 +395,12 @@ def 소형주_성장밸류(
 
     이익성장률_컬럼추출 = df1[
         [
-            f"매출액{YEAR}{QUATER}YOY",
-            f"매출액{YEAR}{QUATER}QOQ",
-            f"영업이익{YEAR}{QUATER}YOY",
-            f"영업이익{YEAR}{QUATER}QOQ",
-            f"지배순이익{YEAR}{QUATER}YOY",
-            f"지배순이익{YEAR}{QUATER}QOQ",
+            f"매출액{y}{q}YOY",
+            f"매출액{y}{q}QOQ",
+            f"영업이익{y}{q}YOY",
+            f"영업이익{y}{q}QOQ",
+            f"지배순이익{y}{q}YOY",
+            f"지배순이익{y}{q}QOQ",
         ]
     ]
     df1["이익성장등수"] = 종합_랭킹_계산(이익성장률_컬럼추출)
@@ -384,61 +413,44 @@ def 소형주_성장밸류(
 
 
 def extract_header(real_name):
-    """real_name으로 부터 년도와 분기를 추출한다. real_name에는 실적발표반영, 실적데이터반영, 재무데이터반영등이 있다.
+    """real_name으로부터 년도와 분기를 추출한다."""
+    if not real_name or not isinstance(real_name, str):
+        print("[경고] real_name이 유효하지 않습니다. 기본값('26년', '1Q')을 사용합니다.")
+        return "26년", "1Q"
 
-    real_name : 퀀트킹 사이트에 올라와 있는 게시판의 제목 ex)퀀트데이터2022.05.25(22년1Q실적발표반영)
-
-    return:
-        year : real_name의 '(..)'에서 년도를 추출 ex) ...(22년1Q...) -> 22년을 추출
-        quater : real_name의 '(..)'에서 분기를 추출 ex) ...(22년1Q...) --> 1Q를 추출 다만 실적이라는 단어가 들어 있으면 '(E)'를 추가한다.
-    """
-    regexp = re.compile(r".*\(((\d+년)\s*(\dQ).*)\)")
+    regexp = re.compile(r"(\d{2,4}년)\s*(\d[Qq])")
     matchobj = regexp.search(real_name)
-    print(matchobj.group(1), matchobj.group(2), matchobj.group(3))
-    year = matchobj.group(2)
-    quater = matchobj.group(3)
-    # if '실적' in real_name: #XXX 파일이름 변경으로 뭔가 다른 로직 필요
-    #    quater += '(E)'
-    return year, quater
+
+    if matchobj:
+        year = matchobj.group(1)
+        quater = matchobj.group(2).upper()
+        print(f"[헤더 추출 성공] 년도: {year}, 분기: {quater} (원본: {real_name})")
+        return year, quater
+
+    print(f"[경고] '{real_name}'에서 년도/분기를 추출하지 못했습니다. 기본값('26년', '1Q')을 사용합니다.")
+    return "26년", "1Q"
 
 
 # %%
 def 관리종목다운로드():
-    """url : https://open.krx.co.kr/contents/MKD/10/1002/10020401/MKD10020401.jsp
-    start, end를 넣지 않으면 마지막 working day의 신고가를 조회한다.
-    """
-    # STEP 01: Generate OTP
-    gen_otp_url = "http://open.krx.co.kr/contents/COM/GenerateOTP.jspx"
-    gen_otp_data = {
-        "name": "fileDown",
-        "filetype": "csv",
-        "url": "MKD/04/0403/04030100/mkd04030100",
-        "gubun": "ALL",  # 시장구분: ALL=전체, STK=코스피, KSQ=코스피
-        "isu_cd": "",
-        "pagePath": "/contents/MKD/04/0403/04030100/MKD04030100.jsp",
-    }
-    # print(gen_otp_data)
+    """KIND(한국거래소 기업공시채널)에서 관리종목 목록을 수집한다."""
+    url = (
+        "https://kind.krx.co.kr/investwarn/adminissue.do?"
+        "method=searchAdminIssueSub&currentPageSize=5000&pageIndex=1&"
+        "orderMode=1&orderStat=D&searchMode=&searchCodeType=&searchCorpName=&"
+        "repIsuSrtCd=&forward=adminissue_down&paxreq=&outsvcno=&marketType=&searchCorpNameTmp="
+    )
     headers = {
-        "Referer": "http://open.krx.co.kr/contents/MKD/10/1002/10020401/MKD10020401.jsp",
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.141 Whale/3.15.136.29 Safari/537.36",
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.141 Whale/3.15.136.29 Safari/537.36"
     }
-    r = rq.post(gen_otp_url, gen_otp_data, headers=headers)
-    code = r.content
+    r = rq.get(url, headers=headers)
+    r.raise_for_status()
+    import io
 
-    # STEP 02: download
-    down_url = "http://file.krx.co.kr/download.jspx"
-    down_data = {
-        "code": code,
-    }
-
-    headers = {
-        "Referer": "http://open.krx.co.kr",
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.141 Whale/3.15.136.29 Safari/537.36",
-    }
-    r = rq.post(down_url, down_data, headers=headers)
-    df = pd.read_csv(BytesIO(r.content))
-    # df['종목코드'] = df['종목코드'].apply(lambda x: '{:0>6d}'.format(x))
-
+    dfs = pd.read_html(io.StringIO(r.text))
+    df = dfs[0].dropna(how="all")
+    if "종목코드" in df.columns:
+        df["종목코드"] = df["종목코드"].astype(str).str.zfill(6)
     return df
 
 
@@ -451,8 +463,25 @@ if __name__ == "__main__":
     import mail
     import download
 
-    path = "./"
-    [os.remove(f) for f in glob.glob("./*.csv")]
+    strategy_files = [
+        "신마법공식소형주_new.csv",
+        "실적 성장 F우량주 전략_new.csv",
+        "시총하위 슈퍼가치저가주 전략_new.csv",
+        "저가주_안전마진 전략_new.csv",
+        "실적 성장 저가주 전략_new.csv",
+        "실적 성장 배당주 전략_new.csv",
+        "실적 성장 슈퍼가치 전략_new.csv",
+        "시총하위 이익율 성장률 전략_new.csv",
+        "실적 성장 이익률우량 소형주 전략_new.csv",
+        "실적 성장 이익률우량주 전략_new.csv",
+        "시총중위 이익성장률 전략_new.csv",
+        "시총중위 슈퍼가치저가주 전략_new.csv",
+        "소형주 컨트래리안 전략_new.csv",
+        "시총하위 이익성장+슈퍼가치_new.csv",
+    ]
+    for f in strategy_files:
+        if os.path.exists(f):
+            os.remove(f)
 
     # ====================================
     # 퀀트킹사이트의 최상단 파일을 다운로드한다
@@ -475,7 +504,9 @@ if __name__ == "__main__":
             FILENAME, sheet_name="퀀트데이터", skiprows=1, engine="openpyxl"
         )
         read_df.columns = read_df.columns.str.replace("\n", "").str.replace(" ", "")
-        read_df.rename(columns=lambda x: "회사명" if x.startswith("회사명") else x, inplace=True)
+        read_df.rename(
+            columns=lambda x: "회사명" if x.startswith("회사명") else x, inplace=True
+        )
         columns = read_df.columns
         read_df.set_index("코드", inplace=True)
         if f"EPS{YEAR}{QUATER}(E)YOY" in columns:
@@ -553,15 +584,11 @@ if __name__ == "__main__":
         # ===============================
         # 관리종목 제외
         # ===============================
-        # URL = "http://kind.krx.co.kr/investwarn/adminissue.do?method=searchAdminIssueSub&currentPageSize=5000&pageIndex=1&orderMode=1&orderStat=D&searchMode=&searchCodeType=&searchCorpName=&repIsuSrtCd=&forward=adminissue_down&paxreq=&outsvcno=&marketType=&searchCorpNameTmp="
-        # 관리종목 = pd.read_html(URL)[0].dropna()
-        # 관리종목 = 관리종목다운로드()
-        # if not isinstance(관리종목['종목코드'].values[0], str):
-        #     관리종목['종목코드'] = 관리종목['종목코드'].astype('int')
-        #     관리종목['종목코드'] = 관리종목['종목코드'].map('{:06d}'.format)
-
-        # 관리종목제외 = ~df.index.str[1:].isin(관리종목['종목코드'])
-        # df = df[관리종목제외]
+        관리종목 = 관리종목다운로드()
+        if "종목코드" in 관리종목.columns:
+            관리종목["종목코드"] = 관리종목["종목코드"].astype(str).str.zfill(6)
+            관리종목제외 = ~df.index.str[1:].isin(관리종목["종목코드"])
+            df = df[관리종목제외]
 
         # ===============================
         # 종목 추출
@@ -582,29 +609,17 @@ if __name__ == "__main__":
         소형주_성장밸류(df.copy(), 20)
         # ===============================
         output_file = "result.csv"
-        file_list = os.listdir(path)
-        file_list_csv = [file for file in file_list if file.endswith(".csv")]
-
-        is_first_file = True
-        for file in file_list_csv:
-            print(os.path.basename(file))
-            with open(file, "r") as csv_in_file:
-                with open(output_file, "a") as csv_out_file:
-                    freader = csv.reader(csv_in_file)
-                    fwriter = csv.writer(csv_out_file)
-                    if is_first_file:
-                        for row in freader:
-                            fwriter.writerow(row)
-                        is_first_file = False
-                    else:
-                        header = next(freader)  # 헤더를 건너뛰는 옵션
-                        for row in freader:
-                            fwriter.writerow(row)
-        df = pd.read_csv(output_file).drop_duplicates(["회사명"], keep="first")
-        summary_df = df[["코드", "회사명"]].copy()
-        summary_df.sort_values(by="회사명", inplace=True)
-        summary_df.columns = ["", "종목명"]
-        summary_df.to_csv("매매종목.csv", encoding="cp949", index=False)
+        dfs = [pd.read_csv(f) for f in strategy_files if os.path.exists(f)]
+        if dfs:
+            result_df = pd.concat(dfs, ignore_index=True)
+            result_df.to_csv(output_file, index=False, encoding="utf-8")
+            summary_df = (
+                result_df.drop_duplicates(["회사명"], keep="first")[["코드", "회사명"]]
+                .copy()
+            )
+            summary_df.sort_values(by="회사명", inplace=True)
+            summary_df.columns = ["", "종목명"]
+            summary_df.to_csv("매매종목.csv", encoding="utf-8", index=False)
 
         if is_change_month:
             print("sendd mail")

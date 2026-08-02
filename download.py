@@ -2,15 +2,27 @@
 import os
 import requests
 import json
+import datetime
 from bs4 import BeautifulSoup
 from urllib.parse import urlsplit, parse_qsl, urlencode
 import config
 #%%
-DOWNLOADED_FILENAME='quantking.xlsx'
+DOWNLOADED_FILENAME = 'quantking.xlsx'
+REALNAME_FILENAME = 'quantking_real_name.txt'
 
 def download_quantking():
     if os.path.exists(DOWNLOADED_FILENAME):
-        os.remove(DOWNLOADED_FILENAME)
+        file_date = datetime.date.fromtimestamp(os.path.getmtime(DOWNLOADED_FILENAME))
+        today = datetime.date.today()
+        if file_date == today:
+            print(f"{DOWNLOADED_FILENAME} 파일이 오늘({today}) 생성되었으므로 재다운로드를 스킵합니다.")
+            if os.path.exists(REALNAME_FILENAME):
+                with open(REALNAME_FILENAME, "r", encoding="utf-8") as f:
+                    return f.read().strip()
+            return "퀀트데이터 2026.05.25(26년1Q 실적데이터반영)"
+        else:
+            print(f"{DOWNLOADED_FILENAME} 파일이 과거 날짜({file_date})이므로 최신 파일로 재다운로드합니다.")
+            os.remove(DOWNLOADED_FILENAME)
 
     base_url = "http://quantking.net"
     url = base_url+"/login"
@@ -52,6 +64,8 @@ def download_quantking():
 
         download(download_url, DOWNLOADED_FILENAME)
         print("+++++++++++++++++++++++++++++++++")
+        with open(REALNAME_FILENAME, "w", encoding="utf-8") as f:
+            f.write(real_name)
         return real_name
 
 if __name__ == '__main__':
